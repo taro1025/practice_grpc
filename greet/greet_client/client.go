@@ -8,6 +8,7 @@ import (
 	"greet/greet/greetpb"
 	"io"
 	"log"
+	"time"
 )
 
 func main() {
@@ -22,11 +23,14 @@ func main() {
 	client := greetpb.NewGreetServiceClient(cc)
 	fmt.Println("Created client: %f", client)
 
-	// 1:1 (server:client)
+	//1:1 (server:client)
 	doUnary(client)
-
+	
 	// n:1
 	doServerStreaming(client)
+
+	// 1:n
+	doClientStreaming(client)
 }
 
 func doUnary(client greetpb.GreetServiceClient) {
@@ -34,7 +38,7 @@ func doUnary(client greetpb.GreetServiceClient) {
 	req := &greetpb.GreetRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "Taro",
-			LastName: "Yaha",
+			LastName:  "Yaha",
 		},
 	}
 	res, err := client.Greet(context.Background(), req)
@@ -50,7 +54,7 @@ func doServerStreaming(client greetpb.GreetServiceClient) {
 	req := &greetpb.GreetManyTimesRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "taro",
-			LastName: "yaha",
+			LastName:  "yaha",
 		},
 	}
 	resStream, err := client.GreetManyTimes(context.Background(), req)
@@ -68,4 +72,58 @@ func doServerStreaming(client greetpb.GreetServiceClient) {
 		}
 		log.Printf("Response from GreetManyTimes: %v", msg.GetResult())
 	}
+}
+
+func doClientStreaming(client greetpb.GreetServiceClient) {
+	fmt.Println("Starting to do a Client Streaming RPC...")
+
+	reqests := []*greetpb.LongGreetRequest{
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Taro",
+				LastName:  "Yaha",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "aaa",
+				LastName:  "aaa",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "bbb",
+				LastName:  "bbb",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "cccc",
+				LastName:  "cccc",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "ddd",
+				LastName:  "ddd",
+			},
+		},
+	}
+
+	stream, err := client.LongGreet(context.Background())
+	if err != nil {
+		log.Fatalf("error while request %v: ", err)
+	}
+
+	for _, req := range reqests {
+		stream.Send(req)
+		log.Printf("send %v", req.GetGreeting().LastName)
+		time.Sleep(1000 * time.Millisecond)
+	}
+	// RecieveとCloseはセット
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("error while recieving response %v: ", err)
+	}
+	log.Printf("response: %v", res)
 }
