@@ -23,5 +23,8 @@ message SquareRootResponse {
 service CalculatorService {
   rpc Sum(SumRequest) returns (SumResponse) {}
 
+  // error handling
+  // this RPC will throw an exception if the sent number is negative
+  // the error being sent is of type INVALID_ARGUMENT
   rpc squareRoot(SquareRootRequest) returns (SquareRootResponse) {}
 }
