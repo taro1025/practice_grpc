@@ -29,4 +29,6 @@ GetHoge
 
 サービス系がhoge_grpc.pb.goでそれ以外がhoge.pb.goかな
 
+関数の実装は"server interface"で検索すればおk
 
+stream系は基本ループで送受信する。io.EOFでbreak
